@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { createClient, type Session } from '@supabase/supabase-js'
-import { Music, Phone, MapPin, Clock, Star, ChevronDown, Menu, X, Calendar, Users, Heart, CheckCircle, ArrowRight, Gift, MessageCircle } from 'lucide-react'
+import { Music, Phone, MapPin, Clock, Star, ChevronDown, Menu, X, Calendar, Users, Heart, CheckCircle, Gift, MessageCircle } from 'lucide-react'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? 'https://wbdxjonzpnbfawvreulz.supabase.co'
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'sb_publishable_g1_PDGwiBH9rQ3whWroeJg_WUTXWzBP'
@@ -562,40 +562,6 @@ function App() {
         {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
           <ChevronDown className="w-8 h-8 text-amber-400/60" />
-        </div>
-      </section>
-
-      {/* Cities Section */}
-      <section className="py-16 sm:py-20 bg-stone-900/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-amber-400 to-yellow-200 bg-clip-text text-transparent">Donde Estamos</span>
-            </h2>
-            <p className="text-stone-400 text-lg max-w-2xl mx-auto">Llevamos la mejor música de mariachi a las principales ciudades de Boyacá</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            {cities.map((city) => (
-              <div
-                key={city}
-                className="group relative overflow-hidden rounded-2xl bg-gradient-to-b from-stone-800/80 to-stone-900/80 border border-amber-900/20 hover:border-amber-500/40 transition-all duration-300 cursor-pointer"
-                onClick={() => {
-                  setSelectedCity(city)
-                  scrollToSection('reservar')
-                }}
-              >
-                <div className="p-8 text-center">
-                  <MapPin className="w-12 h-12 text-amber-400 mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                  <h3 className="text-2xl font-bold text-white mb-2">{city}</h3>
-                  <p className="text-stone-400 mb-4">Cobertura completa en {city} y alrededores</p>
-                  <span className="inline-flex items-center gap-1 text-amber-400 font-medium group-hover:gap-2 transition-all">
-                    Reservar aquí <ArrowRight className="w-4 h-4" />
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
