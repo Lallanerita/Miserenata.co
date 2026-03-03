@@ -1,47 +1,91 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
+import { createClient, type Session } from '@supabase/supabase-js'
 import { Music, Phone, MapPin, Clock, Star, ChevronDown, Menu, X, Calendar, Users, Heart, CheckCircle, ArrowRight, Gift, MessageCircle } from 'lucide-react'
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? 'https://wbdxjonzpnbfawvreulz.supabase.co'
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'sb_publishable_g1_PDGwiBH9rQ3whWroeJg_WUTXWzBP'
+const ADMIN_EMAIL = 'miseranataco@gmail.com'
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 const cities = ['Duitama', 'Paipa', 'Sogamoso']
 
-const packages = [
+type PackageConfig = {
+  id?: string
+  name: string
+  priceCop: number
+  durationMinutes: number
+  songsCount: number
+  musiciansCount: number
+  description: string
+  features: string[]
+  popular: boolean
+  sortOrder: number
+  imagePath?: string | null
+  imageUrl?: string | null
+  fallbackUrl?: string | null
+  localImage?: string
+}
+
+type PackageRow = {
+  id: string
+  name: string
+  price_cop: number
+  duration_minutes: number
+  songs_count: number
+  musicians_count: number
+  description: string
+  features: string[]
+  popular: boolean
+  sort_order: number
+  image_path: string | null
+  image_url: string | null
+  fallback_url: string | null
+}
+
+const defaultPackages: PackageConfig[] = [
   {
     name: 'Serenata Básica',
-    price: '250.000',
-    duration: '20 min',
-    songs: '6 canciones',
-    musicians: '4 músicos',
+    priceCop: 250000,
+    durationMinutes: 20,
+    songsCount: 6,
+    musiciansCount: 4,
     description: 'La serenata perfecta para sorprender a esa persona especial con las canciones más románticas.',
     features: ['4 músicos profesionales', '6 canciones a elegir', 'Traje típico de gala', 'Repertorio clásico mexicano'],
     popular: false,
-    image: '/images/guitar.jpg',
-    fallback: 'https://placehold.co/400x300/1a1a2e/d4af37?text=Serenata+B%C3%A1sica'
+    sortOrder: 1,
+    localImage: '/images/guitar.jpg',
+    fallbackUrl: 'https://placehold.co/400x300/1a1a2e/d4af37?text=Serenata+B%C3%A1sica',
   },
   {
     name: 'Serenata Estándar',
-    price: '320.000',
-    duration: '30 min',
-    songs: '8 canciones',
-    musicians: '6 músicos',
+    priceCop: 320000,
+    durationMinutes: 30,
+    songsCount: 8,
+    musiciansCount: 6,
     description: 'Una experiencia inolvidable con un grupo completo de mariachis de primer nivel.',
     features: ['6 músicos profesionales', '8 canciones a elegir', 'Traje de charro premium', 'Arreglo de rosas incluido', 'Repertorio personalizado'],
     popular: true,
-    image: '/images/mariachi-hero.jpg',
-    fallback: 'https://placehold.co/400x300/1a1a2e/d4af37?text=Serenata+Est%C3%A1ndar'
+    sortOrder: 2,
+    localImage: '/images/mariachi-hero.jpg',
+    fallbackUrl: 'https://placehold.co/400x300/1a1a2e/d4af37?text=Serenata+Est%C3%A1ndar',
   },
   {
     name: 'Gran Serenata de Lujo',
-    price: '380.000',
-    duration: '40 min',
-    songs: '12 canciones',
-    musicians: '8 músicos',
+    priceCop: 380000,
+    durationMinutes: 40,
+    songsCount: 12,
+    musiciansCount: 8,
     description: 'La experiencia más exclusiva: un espectáculo completo con el grupo de mariachis al completo.',
     features: ['8 músicos profesionales', '12 canciones a elegir', 'Traje de charro de lujo', 'Obsequio incluido', 'Arreglo de rosas premium', 'Video profesional incluido', 'MC dedicado', 'Repertorio 100% personalizado'],
     popular: false,
-    image: '/images/trumpet.jpg',
-    fallback: 'https://placehold.co/400x300/1a1a2e/d4af37?text=Gran+Serenata'
-  }
+    sortOrder: 3,
+    localImage: '/images/trumpet.jpg',
+    fallbackUrl: 'https://placehold.co/400x300/1a1a2e/d4af37?text=Gran+Serenata',
+  },
 ]
+
+const formatCop = (value: number) => value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 
 const testimonials = [
   {
@@ -92,6 +136,160 @@ function ImageWithFallback({ src, fallback, alt, className }: { src: string; fal
 }
 
 function App() {
+  /* ---------- Supabase helpers ---------- */
+  const defaultPackageByName = useMemo(() => {
+    return Object.fromEntries(defaultPackages.map((p) => [p.name, p])) as Record<string, PackageConfig>
+  }, [])
+
+  const getPackageImageSrc = (pkg: PackageConfig) => {
+    if (pkg.imagePath) return supabase.storage.from('package-images').getPublicUrl(pkg.imagePath).data.publicUrl
+    if (pkg.imageUrl) return pkg.imageUrl
+    return defaultPackageByName[pkg.name]?.localImage || '/images/mariachi-hero.jpg'
+  }
+
+  const getPackageFallback = (pkg: PackageConfig) =>
+    pkg.fallbackUrl || defaultPackageByName[pkg.name]?.fallbackUrl || 'https://placehold.co/400x300/1a1a2e/d4af37?text=Miserenata'
+
+  /* ---------- Admin mode state ---------- */
+  const [adminMode, setAdminMode] = useState(false)
+  const [packagesData, setPackagesData] = useState<PackageConfig[]>(defaultPackages)
+  const [_packagesLoading, setPackagesLoading] = useState(true)
+
+  const [adminEmail, setAdminEmailState] = useState(ADMIN_EMAIL)
+  const [adminPassword, setAdminPassword] = useState('')
+  const [adminSession, setAdminSession] = useState<Session | null>(null)
+  const [adminError, setAdminError] = useState<string | null>(null)
+  const [adminBusy, setAdminBusy] = useState(false)
+  const [adminSaveSuccess, setAdminSaveSuccess] = useState<string | null>(null)
+  const [adminPackages, setAdminPackages] = useState<PackageConfig[]>([])
+  const [adminPackagesLoading, setAdminPackagesLoading] = useState(false)
+
+  const isAdmin = adminSession?.user?.email === ADMIN_EMAIL
+
+  const mapRowToConfig = (row: PackageRow): PackageConfig => {
+    const defaults = defaultPackageByName[row.name]
+    return {
+      id: row.id, name: row.name, priceCop: row.price_cop,
+      durationMinutes: row.duration_minutes, songsCount: row.songs_count,
+      musiciansCount: row.musicians_count, description: row.description,
+      features: row.features || [], popular: row.popular, sortOrder: row.sort_order,
+      imagePath: row.image_path, imageUrl: row.image_url,
+      fallbackUrl: row.fallback_url || defaults?.fallbackUrl || null,
+      localImage: defaults?.localImage,
+    }
+  }
+
+  const loadPackages = async () => {
+    setPackagesLoading(true)
+    try {
+      const { data, error } = await supabase.from('packages').select('*').order('sort_order', { ascending: true })
+      if (!error && Array.isArray(data) && data.length > 0) {
+        setPackagesData((data as PackageRow[]).map(mapRowToConfig))
+      } else { setPackagesData(defaultPackages) }
+    } catch { setPackagesData(defaultPackages) }
+    setPackagesLoading(false)
+  }
+
+  const loadAdminPackages = async () => {
+    setAdminPackagesLoading(true)
+    const { data, error } = await supabase.from('packages').select('*').order('sort_order', { ascending: true })
+    if (!error && Array.isArray(data)) { setAdminPackages((data as PackageRow[]).map(mapRowToConfig)) }
+    else { setAdminError(error?.message || 'No se pudieron cargar los paquetes') }
+    setAdminPackagesLoading(false)
+  }
+
+  useEffect(() => {
+    const update = () => setAdminMode(window.location.hash === '#admin')
+    update()
+    window.addEventListener('hashchange', update)
+    return () => window.removeEventListener('hashchange', update)
+  }, [])
+
+  useEffect(() => { loadPackages() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!adminMode) return
+    let live = true
+    supabase.auth.getSession().then(({ data }) => { if (live) setAdminSession(data.session) })
+    const { data: sub } = supabase.auth.onAuthStateChange((_ev, s) => setAdminSession(s))
+    return () => { live = false; sub.subscription.unsubscribe() }
+  }, [adminMode])
+
+  useEffect(() => {
+    if (adminMode && adminSession) loadAdminPackages()
+  }, [adminMode, adminSession]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ---------- Admin CRUD ---------- */
+  const seedPackages = async () => {
+    setAdminError(null); setAdminBusy(true)
+    try {
+      const payload = defaultPackages.map((p) => ({
+        name: p.name, price_cop: p.priceCop, duration_minutes: p.durationMinutes,
+        songs_count: p.songsCount, musicians_count: p.musiciansCount,
+        description: p.description, features: p.features, popular: p.popular,
+        sort_order: p.sortOrder, image_path: null, image_url: null, fallback_url: p.fallbackUrl ?? null,
+      }))
+      const { error } = await supabase.from('packages').insert(payload)
+      if (error) throw error
+      await loadAdminPackages(); await loadPackages()
+      setAdminSaveSuccess('Paquetes iniciales creados'); setTimeout(() => setAdminSaveSuccess(null), 3000)
+    } catch (err: unknown) { setAdminError(err instanceof Error ? err.message : 'Error creando paquetes') }
+    finally { setAdminBusy(false) }
+  }
+
+  const updateAdminPkg = (id: string | undefined, partial: Partial<PackageConfig>) => {
+    if (!id) return
+    setAdminPackages((prev) => prev.map((p) => (p.id !== id ? p : { ...p, ...partial })))
+  }
+
+  const saveAdminPkg = async (pkg: PackageConfig) => {
+    if (!pkg.id) return
+    setAdminError(null); setAdminBusy(true)
+    try {
+      const { error } = await supabase.from('packages').update({
+        name: pkg.name, price_cop: pkg.priceCop, duration_minutes: pkg.durationMinutes,
+        songs_count: pkg.songsCount, musicians_count: pkg.musiciansCount,
+        description: pkg.description, features: pkg.features, popular: pkg.popular,
+        sort_order: pkg.sortOrder, image_path: pkg.imagePath ?? null,
+        image_url: pkg.imageUrl ?? null, fallback_url: pkg.fallbackUrl ?? null,
+      }).eq('id', pkg.id)
+      if (error) throw error
+      await loadAdminPackages(); await loadPackages()
+      setAdminSaveSuccess(`"${pkg.name}" guardado`); setTimeout(() => setAdminSaveSuccess(null), 3000)
+    } catch (err: unknown) { setAdminError(err instanceof Error ? err.message : 'Error guardando') }
+    finally { setAdminBusy(false) }
+  }
+
+  const uploadPackageImage = async (pkg: PackageConfig, file: File) => {
+    if (!pkg.id) return
+    setAdminError(null); setAdminBusy(true)
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const path = `packages/${pkg.id}/${Date.now()}-${safeName}`
+      const { error: ue } = await supabase.storage.from('package-images').upload(path, file, { upsert: true })
+      if (ue) throw ue
+      const { error: de } = await supabase.from('packages').update({ image_path: path }).eq('id', pkg.id)
+      if (de) throw de
+      await loadAdminPackages(); await loadPackages()
+      setAdminSaveSuccess('Imagen subida'); setTimeout(() => setAdminSaveSuccess(null), 3000)
+    } catch (err: unknown) { setAdminError(err instanceof Error ? err.message : 'Error subiendo imagen') }
+    finally { setAdminBusy(false) }
+  }
+
+  const adminLogin = async (e: React.FormEvent) => {
+    e.preventDefault(); setAdminError(null); setAdminBusy(true)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: adminEmail.trim(), password: adminPassword })
+      if (error) throw error
+      setAdminPassword('')
+    } catch (err: unknown) { setAdminError(err instanceof Error ? err.message : 'Error de login') }
+    finally { setAdminBusy(false) }
+  }
+
+  const adminLogout = async () => { setAdminBusy(true); await supabase.auth.signOut(); setAdminBusy(false) }
+  const exitAdmin = () => { window.location.hash = ''; setAdminMode(false) }
+
+  /* ---------- Public booking state ---------- */
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [selectedPackage, setSelectedPackage] = useState('')
   const [selectedCity, setSelectedCity] = useState('')
@@ -105,9 +303,7 @@ function App() {
   const [selectedExtras, setSelectedExtras] = useState<string[]>([])
 
   const toggleExtra = (id: string) => {
-    setSelectedExtras(prev =>
-      prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
-    )
+    setSelectedExtras(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id])
   }
 
   const handleBooking = (e: React.FormEvent) => {
@@ -142,6 +338,101 @@ function App() {
 
   const today = new Date().toISOString().split('T')[0]
 
+  /* ===================== ADMIN PANEL ===================== */
+  if (adminMode) {
+    return (
+      <div className="min-h-screen bg-stone-950 text-white font-sans">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="flex items-center justify-between gap-4 mb-8">
+            <div>
+              <div className="text-sm text-stone-400">Panel de Administrador</div>
+              <div className="text-2xl font-extrabold bg-gradient-to-r from-amber-400 to-yellow-200 bg-clip-text text-transparent">Miserenata.co</div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={exitAdmin} className="border border-stone-700 text-stone-300 hover:text-white hover:border-stone-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all">Volver al sitio</button>
+              {adminSession && <button onClick={adminLogout} className="bg-stone-800 hover:bg-stone-700 border border-stone-700 px-4 py-2 rounded-xl text-sm font-semibold transition-all" disabled={adminBusy}>Cerrar sesión</button>}
+            </div>
+          </div>
+
+          {adminSaveSuccess && <div className="mb-6 bg-green-500/10 border border-green-500/30 text-green-200 rounded-2xl p-4 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-400" />{adminSaveSuccess}</div>}
+          {adminError && <div className="mb-6 bg-red-500/10 border border-red-500/30 text-red-200 rounded-2xl p-4">{adminError}</div>}
+
+          {!adminSession ? (
+            <form onSubmit={adminLogin} className="bg-gradient-to-b from-stone-800/70 to-stone-900/90 border border-amber-900/30 rounded-3xl p-6 sm:p-10 space-y-5 max-w-md mx-auto">
+              <h3 className="text-xl font-bold text-center mb-2">Iniciar Sesión</h3>
+              <div>
+                <label className="block text-sm font-medium text-amber-300 mb-2">Email</label>
+                <input type="email" required value={adminEmail} onChange={(e) => setAdminEmailState(e.target.value)} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-amber-300 mb-2">Contraseña</label>
+                <input type="password" required value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all" />
+              </div>
+              <button type="submit" disabled={adminBusy} className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-3 rounded-xl font-bold hover:from-amber-400 hover:to-amber-500 transition-all disabled:opacity-50">{adminBusy ? 'Entrando...' : 'Entrar'}</button>
+            </form>
+          ) : !isAdmin ? (
+            <div className="bg-stone-900 border border-stone-800 rounded-3xl p-8 text-center max-w-md mx-auto">
+              <p className="text-stone-300">Sesión iniciada como:</p>
+              <p className="font-bold text-white mt-1">{adminSession.user.email}</p>
+              <p className="text-stone-500 mt-4">Este usuario no tiene permisos de admin.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="text-sm text-stone-400">Conectado como: {adminSession.user.email}</div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={loadAdminPackages} disabled={adminBusy || adminPackagesLoading} className="bg-stone-800 hover:bg-stone-700 border border-stone-700 px-4 py-2 rounded-xl text-sm font-semibold transition-all">Recargar</button>
+                    {adminPackages.length === 0 && !adminPackagesLoading && <button onClick={seedPackages} disabled={adminBusy} className="bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 px-4 py-2 rounded-xl text-sm font-bold hover:from-amber-400 hover:to-amber-500 transition-all">Crear paquetes iniciales</button>}
+                  </div>
+                </div>
+              </div>
+
+              {adminPackagesLoading ? (
+                <div className="text-center text-stone-400 py-10">Cargando paquetes...</div>
+              ) : adminPackages.length === 0 ? (
+                <div className="bg-stone-900 border border-stone-800 rounded-2xl p-8 text-center text-stone-300">No hay paquetes en la base de datos. Usa &quot;Crear paquetes iniciales&quot; para empezar.</div>
+              ) : (
+                <div className="space-y-6">
+                  {adminPackages.map((pkg) => (
+                    <div key={pkg.id} className="bg-gradient-to-b from-stone-800/70 to-stone-900/90 border border-stone-800 rounded-3xl p-6">
+                      <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="w-full lg:w-56 flex-shrink-0">
+                          <div className="rounded-2xl overflow-hidden border border-stone-700 bg-stone-900">
+                            <ImageWithFallback src={getPackageImageSrc(pkg)} fallback={getPackageFallback(pkg)} alt={pkg.name} className="w-full h-40 object-cover" />
+                          </div>
+                          <div className="mt-3">
+                            <label className="block text-xs font-medium text-stone-400 mb-1">Subir imagen</label>
+                            <input type="file" accept="image/*" className="block w-full text-sm text-stone-300 file:bg-stone-800 file:border file:border-stone-700 file:text-stone-200 file:px-3 file:py-2 file:rounded-lg file:mr-3 file:cursor-pointer" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadPackageImage(pkg, f) }} />
+                          </div>
+                        </div>
+                        <div className="flex-1 space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div><label className="block text-xs font-medium text-stone-400 mb-1">Nombre</label><input value={pkg.name} onChange={(e) => updateAdminPkg(pkg.id, { name: e.target.value })} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500 transition-all" /></div>
+                            <div><label className="block text-xs font-medium text-stone-400 mb-1">Precio (COP)</label><input type="number" value={pkg.priceCop} onChange={(e) => updateAdminPkg(pkg.id, { priceCop: Number(e.target.value) })} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500 transition-all" /></div>
+                            <div><label className="block text-xs font-medium text-stone-400 mb-1">Duración (min)</label><input type="number" value={pkg.durationMinutes} onChange={(e) => updateAdminPkg(pkg.id, { durationMinutes: Number(e.target.value) })} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500 transition-all" /></div>
+                            <div><label className="block text-xs font-medium text-stone-400 mb-1">Canciones</label><input type="number" value={pkg.songsCount} onChange={(e) => updateAdminPkg(pkg.id, { songsCount: Number(e.target.value) })} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500 transition-all" /></div>
+                            <div><label className="block text-xs font-medium text-stone-400 mb-1">Músicos</label><input type="number" value={pkg.musiciansCount} onChange={(e) => updateAdminPkg(pkg.id, { musiciansCount: Number(e.target.value) })} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500 transition-all" /></div>
+                            <div><label className="block text-xs font-medium text-stone-400 mb-1">Orden</label><input type="number" value={pkg.sortOrder} onChange={(e) => updateAdminPkg(pkg.id, { sortOrder: Number(e.target.value) })} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500 transition-all" /></div>
+                          </div>
+                          <div><label className="block text-xs font-medium text-stone-400 mb-1">Descripción</label><textarea rows={2} value={pkg.description} onChange={(e) => updateAdminPkg(pkg.id, { description: e.target.value })} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-3 py-2 text-white resize-none focus:outline-none focus:border-amber-500 transition-all" /></div>
+                          <div><label className="block text-xs font-medium text-stone-400 mb-1">Features (una por línea)</label><textarea rows={5} value={pkg.features.join('\n')} onChange={(e) => updateAdminPkg(pkg.id, { features: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-3 py-2 text-white resize-none focus:outline-none focus:border-amber-500 transition-all" /></div>
+                          <label className="inline-flex items-center gap-2 text-sm text-stone-300 cursor-pointer"><input type="checkbox" checked={pkg.popular} onChange={(e) => updateAdminPkg(pkg.id, { popular: e.target.checked })} className="accent-amber-500 w-4 h-4" />Marcar como &quot;Más Popular&quot;</label>
+                          <div className="flex gap-3 pt-2"><button onClick={() => void saveAdminPkg(pkg)} disabled={adminBusy} className="bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 px-6 py-2.5 rounded-xl font-bold hover:from-amber-400 hover:to-amber-500 transition-all disabled:opacity-50">{adminBusy ? 'Guardando...' : 'Guardar'}</button></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  /* ===================== PUBLIC SITE ===================== */
   return (
     <div className="min-h-screen bg-stone-950 text-white font-sans">
       {/* Navigation */}
@@ -323,9 +614,9 @@ function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            {packages.map((pkg) => (
+            {packagesData.map((pkg) => (
               <div
-                key={pkg.name}
+                key={pkg.id || pkg.name}
                 className={`relative rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-2 ${
                   pkg.popular
                     ? 'bg-gradient-to-b from-amber-900/40 to-stone-900 border-2 border-amber-500/50 shadow-2xl shadow-amber-500/10'
@@ -340,8 +631,8 @@ function App() {
 
                 <div className="h-48 overflow-hidden">
                   <ImageWithFallback
-                    src={pkg.image}
-                    fallback={pkg.fallback}
+                    src={getPackageImageSrc(pkg)}
+                    fallback={getPackageFallback(pkg)}
                     alt={pkg.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   />
@@ -353,19 +644,19 @@ function App() {
                   <p className="text-stone-400 text-sm mb-4">{pkg.description}</p>
 
                   <div className="flex items-baseline gap-1 mb-6">
-                    <span className="text-3xl sm:text-4xl font-extrabold text-amber-400">${pkg.price}</span>
+                    <span className="text-3xl sm:text-4xl font-extrabold text-amber-400">${formatCop(pkg.priceCop)}</span>
                     <span className="text-stone-500 text-sm">COP</span>
                   </div>
 
                   <div className="flex flex-wrap gap-3 mb-6">
                     <span className="flex items-center gap-1 text-xs text-stone-400 bg-stone-800 rounded-full px-3 py-1.5">
-                      <Clock className="w-3 h-3 text-amber-400" /> {pkg.duration}
+                      <Clock className="w-3 h-3 text-amber-400" /> {pkg.durationMinutes} min
                     </span>
                     <span className="flex items-center gap-1 text-xs text-stone-400 bg-stone-800 rounded-full px-3 py-1.5">
-                      <Music className="w-3 h-3 text-amber-400" /> {pkg.songs}
+                      <Music className="w-3 h-3 text-amber-400" /> {pkg.songsCount} canciones
                     </span>
                     <span className="flex items-center gap-1 text-xs text-stone-400 bg-stone-800 rounded-full px-3 py-1.5">
-                      <Users className="w-3 h-3 text-amber-400" /> {pkg.musicians}
+                      <Users className="w-3 h-3 text-amber-400" /> {pkg.musiciansCount} músicos
                     </span>
                   </div>
 
@@ -467,8 +758,8 @@ function App() {
                       className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all cursor-pointer"
                     >
                       <option value="">Selecciona un paquete</option>
-                      {packages.map((pkg) => (
-                        <option key={pkg.name} value={pkg.name}>{pkg.name} - ${pkg.price} COP</option>
+                      {packagesData.map((pkg) => (
+                        <option key={pkg.id || pkg.name} value={pkg.name}>{pkg.name} - ${formatCop(pkg.priceCop)} COP</option>
                       ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-500 pointer-events-none" />
