@@ -965,7 +965,6 @@ function App() {
               </span>
             </div>
             <div className="flex items-center gap-6 text-stone-500 text-sm">
-              <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Duitama, Paipa, Sogamoso</span>
               <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> 320 411 2721</span>
             </div>
             <p className="text-stone-600 text-sm">
