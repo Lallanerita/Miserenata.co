@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { createClient, type Session } from '@supabase/supabase-js'
 import { Music, Phone, MapPin, Clock, Star, ChevronDown, Menu, X, Calendar, Users, Heart, CheckCircle, Gift, MessageCircle } from 'lucide-react'
@@ -120,6 +120,76 @@ const extras = [
   { id: 'vino', name: 'Botella de Vino', price: '55.000', icon: '🍷' },
   { id: 'tarjeta', name: 'Tarjeta Personalizada', price: '15.000', icon: '💌' },
 ]
+
+function useCountUp(end: number, durationMs = 900, decimals = 0) {
+  const [value, setValue] = useState(0)
+  const ref = useRef<HTMLDivElement>(null)
+  const started = useRef(false)
+
+  const start = useCallback(() => {
+    if (started.current) return
+    started.current = true
+
+    const startTime = performance.now()
+    const step = (now: number) => {
+      const progress = Math.min((now - startTime) / durationMs, 1)
+      const eased = 1 - Math.pow(1 - progress, 3) // ease-out cubic
+      setValue(Number((eased * end).toFixed(decimals)))
+      if (progress < 1) requestAnimationFrame(step)
+    }
+
+    requestAnimationFrame(step)
+  }, [decimals, durationMs, end])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          start()
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.3 },
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [start])
+
+  return { ref, value }
+}
+
+function StatCounters() {
+  const serenatas = useCountUp(500, 900, 0)
+  const years = useCountUp(10, 900, 0)
+  const rating = useCountUp(5, 900, 1)
+
+  return (
+    <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-12 sm:mt-16 max-w-2xl mx-auto">
+      <div className="text-center">
+        <div ref={serenatas.ref} className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-amber-400">
+          {Math.round(serenatas.value)}+
+        </div>
+        <div className="text-stone-400 text-xs sm:text-sm mt-1">Serenatas Realizadas</div>
+      </div>
+      <div className="text-center">
+        <div ref={years.ref} className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-amber-400">
+          {Math.round(years.value)}+
+        </div>
+        <div className="text-stone-400 text-xs sm:text-sm mt-1">Años de Experiencia</div>
+      </div>
+      <div className="text-center">
+        <div ref={rating.ref} className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-amber-400">
+          {rating.value.toFixed(1)}
+        </div>
+        <div className="text-stone-400 text-xs sm:text-sm mt-1">Calificación Promedio</div>
+      </div>
+    </div>
+  )
+}
 
 function ImageWithFallback({ src, fallback, alt, className }: { src: string; fallback: string; alt: string; className?: string }) {
   return (
@@ -543,20 +613,7 @@ function App() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-12 sm:mt-16 max-w-2xl mx-auto">
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-amber-400">500+</div>
-              <div className="text-stone-400 text-xs sm:text-sm mt-1">Serenatas Realizadas</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-amber-400">10+</div>
-              <div className="text-stone-400 text-xs sm:text-sm mt-1">Años de Experiencia</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-amber-400">5.0</div>
-              <div className="text-stone-400 text-xs sm:text-sm mt-1">Calificación Promedio</div>
-            </div>
-          </div>
+          <StatCounters />
         </div>
 
         {/* Scroll indicator */}
