@@ -361,7 +361,7 @@ function App() {
 
   /* ---------- Public booking state ---------- */
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [selectedPackage, setSelectedPackage] = useState('')
+  const [checkoutPackage, setCheckoutPackage] = useState<PackageConfig | null>(null)
   const [selectedCity, setSelectedCity] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
@@ -376,8 +376,21 @@ function App() {
     setSelectedExtras(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id])
   }
 
+  const openCheckout = (pkg: PackageConfig) => {
+    setCheckoutPackage(pkg)
+    setSelectedExtras([])
+    setBookingSubmitted(false)
+    document.body.style.overflow = 'hidden'
+  }
+
+  const closeCheckout = () => {
+    setCheckoutPackage(null)
+    document.body.style.overflow = ''
+  }
+
   const handleBooking = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!checkoutPackage) return
     const extrasText = selectedExtras.length > 0
       ? selectedExtras.map(id => {
           const extra = extras.find(e => e.id === id)
@@ -388,7 +401,7 @@ function App() {
     const whatsappMessage = `🎺 *Nueva Reserva de Serenata*%0A%0A` +
       `👤 *Nombre:* ${name}%0A` +
       `📱 *Teléfono:* ${phone}%0A` +
-      `🎶 *Paquete:* ${selectedPackage}%0A` +
+      `🎶 *Paquete:* ${checkoutPackage.name}%0A` +
       `🎁 *Adicionales:* ${extrasText}%0A` +
       `📍 *Ciudad:* ${selectedCity}%0A` +
       `📅 *Fecha:* ${selectedDate}%0A` +
@@ -398,7 +411,7 @@ function App() {
 
     window.open(`https://wa.link/wrc5mf?text=${whatsappMessage}`, '_blank')
     setBookingSubmitted(true)
-    setTimeout(() => setBookingSubmitted(false), 5000)
+    setTimeout(() => { setBookingSubmitted(false); closeCheckout() }, 4000)
   }
 
   const scrollToSection = (id: string) => {
@@ -519,11 +532,10 @@ function App() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8">
               <button onClick={() => scrollToSection('servicios')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium">Servicios</button>
-              <button onClick={() => scrollToSection('reservar')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium">Reservar</button>
               <button onClick={() => scrollToSection('testimonios')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium">Testimonios</button>
               <button onClick={() => scrollToSection('contacto')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium">Contacto</button>
               <button
-                onClick={() => scrollToSection('reservar')}
+                onClick={() => scrollToSection('servicios')}
                 className="bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 px-6 py-2.5 rounded-full font-bold hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg shadow-amber-500/20"
               >
                 Reservar Ahora
@@ -545,11 +557,10 @@ function App() {
           <div className="md:hidden bg-stone-900/95 backdrop-blur-md border-t border-amber-900/30">
             <div className="flex flex-col items-center gap-4 py-6">
               <button onClick={() => scrollToSection('servicios')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium text-lg">Servicios</button>
-              <button onClick={() => scrollToSection('reservar')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium text-lg">Reservar</button>
               <button onClick={() => scrollToSection('testimonios')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium text-lg">Testimonios</button>
               <button onClick={() => scrollToSection('contacto')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium text-lg">Contacto</button>
               <button
-                onClick={() => scrollToSection('reservar')}
+                onClick={() => scrollToSection('servicios')}
                 className="bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 px-8 py-3 rounded-full font-bold text-lg"
               >
                 Reservar Ahora
@@ -595,7 +606,7 @@ function App() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
-              onClick={() => scrollToSection('reservar')}
+              onClick={() => scrollToSection('servicios')}
               className="bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 px-8 sm:px-10 py-4 rounded-full font-bold text-lg hover:from-amber-400 hover:to-amber-500 transition-all shadow-2xl shadow-amber-500/30 flex items-center gap-2 w-full sm:w-auto justify-center"
             >
               <Calendar className="w-5 h-5" />
@@ -693,10 +704,7 @@ function App() {
                   </ul>
 
                   <button
-                    onClick={() => {
-                      setSelectedPackage(pkg.name)
-                      scrollToSection('reservar')
-                    }}
+                    onClick={() => openCheckout(pkg)}
                     className={`w-full py-3 rounded-xl font-bold transition-all ${
                       pkg.popular
                         ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 hover:from-amber-400 hover:to-amber-500 shadow-lg shadow-amber-500/20'
@@ -712,137 +720,78 @@ function App() {
         </div>
       </section>
 
-      {/* Booking Section */}
-      <section id="reservar" className="py-16 sm:py-24 bg-stone-900/50 relative">
-        <div className="absolute inset-0 overflow-hidden">
-          <ImageWithFallback
-            src="/images/night-city.jpg"
-            fallback="https://placehold.co/1920x1080/1a1a2e/111?text="
-            alt=""
-            className="w-full h-full object-cover opacity-10"
-          />
-        </div>
+      {/* Checkout Modal */}
+      {checkoutPackage && (
+        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget) closeCheckout() }}>
+          <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-sm" />
+          <div className="relative z-10 w-full max-w-2xl mx-4 my-8 sm:my-12">
+            {/* Close button */}
+            <button onClick={closeCheckout} className="absolute -top-3 -right-3 sm:top-0 sm:right-0 z-20 bg-stone-800 hover:bg-stone-700 border border-stone-600 rounded-full w-10 h-10 flex items-center justify-center text-stone-300 hover:text-white transition-all shadow-lg">
+              <X className="w-5 h-5" />
+            </button>
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-full px-4 py-2 mb-4">
-              <Calendar className="w-4 h-4 text-amber-400" />
-              <span className="text-amber-300 text-sm font-medium">Reserva en Minutos</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-amber-400 to-yellow-200 bg-clip-text text-transparent">Reserva Tu Serenata</span>
-            </h2>
-            <p className="text-stone-400 text-lg max-w-xl mx-auto">Completa el formulario y te confirmaremos por WhatsApp en menos de 5 minutos</p>
-          </div>
-
-          {bookingSubmitted ? (
-            <div className="bg-gradient-to-b from-amber-900/30 to-stone-900 border border-amber-500/40 rounded-3xl p-10 sm:p-14 text-center">
-              <CheckCircle className="w-16 h-16 text-amber-400 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-white mb-2">¡Reserva Enviada!</h3>
-              <p className="text-stone-400 text-lg">Te contactaremos por WhatsApp para confirmar todos los detalles.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleBooking} className="bg-gradient-to-b from-stone-800/80 to-stone-900/90 border border-amber-900/30 rounded-3xl p-6 sm:p-10 space-y-6 backdrop-blur-md shadow-2xl">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Name */}
-                <div>
-                  <label className="block text-sm font-medium text-amber-300 mb-2">Nombre Completo *</label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Tu nombre completo"
-                    className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all"
-                  />
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label className="block text-sm font-medium text-amber-300 mb-2">Teléfono / WhatsApp *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="320 411 2721"
-                    className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all"
-                  />
-                </div>
-
-                {/* Package */}
-                <div>
-                  <label className="block text-sm font-medium text-amber-300 mb-2">Paquete *</label>
-                  <div className="relative">
-                    <select
-                      required
-                      value={selectedPackage}
-                      onChange={(e) => setSelectedPackage(e.target.value)}
-                      className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all cursor-pointer"
-                    >
-                      <option value="">Selecciona un paquete</option>
-                      {packagesData.map((pkg) => (
-                        <option key={pkg.id || pkg.name} value={pkg.name}>{pkg.name} - ${formatCop(pkg.priceCop)} COP</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-500 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* City */}
-                <div>
-                  <label className="block text-sm font-medium text-amber-300 mb-2">Ciudad *</label>
-                  <div className="relative">
-                    <select
-                      required
-                      value={selectedCity}
-                      onChange={(e) => setSelectedCity(e.target.value)}
-                      className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all cursor-pointer"
-                    >
-                      <option value="">Selecciona la ciudad</option>
-                      {cities.map((city) => (
-                        <option key={city} value={city}>{city}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-500 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Date */}
-                <div>
-                  <label className="block text-sm font-medium text-amber-300 mb-2">Fecha *</label>
-                  <input
-                    type="date"
-                    required
-                    min={today}
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all cursor-pointer"
-                  />
-                </div>
-
-                {/* Time */}
-                <div>
-                  <label className="block text-sm font-medium text-amber-300 mb-2">Hora *</label>
-                  <div className="relative">
-                    <select
-                      required
-                      value={selectedTime}
-                      onChange={(e) => setSelectedTime(e.target.value)}
-                      className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all cursor-pointer"
-                    >
-                      <option value="">Selecciona la hora</option>
-                      {timeSlots.map((time) => (
-                        <option key={time} value={time}>{time}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-500 pointer-events-none" />
-                  </div>
-                </div>
+            {bookingSubmitted ? (
+              <div className="bg-gradient-to-b from-amber-900/30 to-stone-900 border border-amber-500/40 rounded-3xl p-10 sm:p-14 text-center">
+                <CheckCircle className="w-16 h-16 text-amber-400 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-white mb-2">¡Reserva Enviada!</h3>
+                <p className="text-stone-400 text-lg">Te contactaremos por WhatsApp para confirmar todos los detalles.</p>
               </div>
+            ) : (
+              <form onSubmit={handleBooking} className="bg-gradient-to-b from-stone-800/95 to-stone-900/98 border border-amber-900/30 rounded-3xl p-6 sm:p-8 space-y-5 backdrop-blur-md shadow-2xl">
+                {/* Selected package summary */}
+                <div className="flex items-center gap-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-stone-700">
+                    <ImageWithFallback src={getPackageImageSrc(checkoutPackage)} fallback={getPackageFallback(checkoutPackage)} alt={checkoutPackage.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-white text-lg truncate">{checkoutPackage.name}</h3>
+                    <div className="flex items-center gap-3 text-sm text-stone-400">
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-amber-400" />{checkoutPackage.durationMinutes} min</span>
+                      <span className="flex items-center gap-1"><Music className="w-3 h-3 text-amber-400" />{checkoutPackage.songsCount} canciones</span>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-xl font-extrabold text-amber-400">${formatCop(checkoutPackage.priceCop)}</div>
+                    <div className="text-xs text-stone-500">COP</div>
+                  </div>
+                </div>
 
-              {/* Extras / Add-ons */}
-              {selectedPackage && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-amber-300 mb-2">Nombre Completo *</label>
+                    <input type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre completo" className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-amber-300 mb-2">Teléfono / WhatsApp *</label>
+                    <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="320 411 2721" className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-amber-300 mb-2">Ciudad *</label>
+                    <div className="relative">
+                      <select required value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all cursor-pointer">
+                        <option value="">Selecciona la ciudad</option>
+                        {cities.map((city) => (<option key={city} value={city}>{city}</option>))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-500 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-amber-300 mb-2">Fecha *</label>
+                    <input type="date" required min={today} value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all cursor-pointer" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-amber-300 mb-2">Hora *</label>
+                    <div className="relative">
+                      <select required value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)} className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all cursor-pointer">
+                        <option value="">Selecciona la hora</option>
+                        {timeSlots.map((time) => (<option key={time} value={time}>{time}</option>))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-500 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Extras */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-amber-300 mb-3">
                     <Gift className="w-4 h-4" />
@@ -852,73 +801,41 @@ function App() {
                     {extras.map((extra) => {
                       const isSelected = selectedExtras.includes(extra.id)
                       return (
-                        <button
-                          key={extra.id}
-                          type="button"
-                          onClick={() => toggleExtra(extra.id)}
-                          className={`flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all duration-200 ${
-                            isSelected
-                              ? 'border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/10'
-                              : 'border-stone-700 bg-stone-800/60 hover:border-amber-900/60 hover:bg-stone-800'
-                          }`}
-                        >
+                        <button key={extra.id} type="button" onClick={() => toggleExtra(extra.id)}
+                          className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 ${isSelected ? 'border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/10' : 'border-stone-700 bg-stone-800/60 hover:border-amber-900/60 hover:bg-stone-800'}`}>
                           <span className="text-2xl">{extra.icon}</span>
-                          <span className={`text-xs font-medium text-center leading-tight ${isSelected ? 'text-amber-300' : 'text-stone-300'}`}>
-                            {extra.name}
-                          </span>
-                          <span className={`text-xs font-bold ${isSelected ? 'text-amber-400' : 'text-stone-500'}`}>
-                            +${extra.price}
-                          </span>
-                          {isSelected && (
-                            <CheckCircle className="w-4 h-4 text-amber-400" />
-                          )}
+                          <span className={`text-xs font-medium text-center leading-tight ${isSelected ? 'text-amber-300' : 'text-stone-300'}`}>{extra.name}</span>
+                          <span className={`text-xs font-bold ${isSelected ? 'text-amber-400' : 'text-stone-500'}`}>+${extra.price}</span>
+                          {isSelected && <CheckCircle className="w-4 h-4 text-amber-400" />}
                         </button>
                       )
                     })}
                   </div>
                 </div>
-              )}
 
-              {/* Address */}
-              <div>
-                <label className="block text-sm font-medium text-amber-300 mb-2">Dirección de la Serenata *</label>
-                <input
-                  type="text"
-                  required
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Dirección completa donde será la serenata"
-                  className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all"
-                />
-              </div>
+                {/* Address */}
+                <div>
+                  <label className="block text-sm font-medium text-amber-300 mb-2">Dirección de la Serenata *</label>
+                  <input type="text" required value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Dirección completa donde será la serenata" className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all" />
+                </div>
 
-              {/* Message */}
-              <div>
-                <label className="block text-sm font-medium text-amber-300 mb-2">Mensaje Adicional (Opcional)</label>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={3}
-                  placeholder="¿Alguna canción especial? ¿Algún detalle que debamos saber?"
-                  className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
-                />
-              </div>
+                {/* Message */}
+                <div>
+                  <label className="block text-sm font-medium text-amber-300 mb-2">Mensaje Adicional (Opcional)</label>
+                  <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={2} placeholder="¿Alguna canción especial? ¿Algún detalle que debamos saber?" className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all resize-none" />
+                </div>
 
-              <button
-                type="submit"
-                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-4 rounded-xl font-bold text-lg hover:from-amber-400 hover:to-amber-500 transition-all shadow-2xl shadow-amber-500/20 flex items-center justify-center gap-2"
-              >
-                <Heart className="w-5 h-5" />
-                Enviar Reserva por WhatsApp
-              </button>
+                <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 py-4 rounded-xl font-bold text-lg hover:from-amber-400 hover:to-amber-500 transition-all shadow-2xl shadow-amber-500/20 flex items-center justify-center gap-2">
+                  <Heart className="w-5 h-5" />
+                  Enviar Reserva por WhatsApp
+                </button>
 
-              <p className="text-stone-500 text-xs text-center">
-                Al enviar, serás redirigido a WhatsApp para confirmar tu reserva directamente con nuestro equipo.
-              </p>
-            </form>
-          )}
+                <p className="text-stone-500 text-xs text-center">Al enviar, serás redirigido a WhatsApp para confirmar tu reserva directamente con nuestro equipo.</p>
+              </form>
+            )}
+          </div>
         </div>
-      </section>
+      )}
 
       {/* Testimonials */}
       <section id="testimonios" className="py-16 sm:py-24 bg-stone-950">
@@ -1032,7 +949,7 @@ function App() {
               Escríbenos por WhatsApp
             </a>
             <button
-              onClick={() => scrollToSection('reservar')}
+              onClick={() => scrollToSection('servicios')}
               className="bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 px-8 py-4 rounded-full font-bold text-lg hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
             >
               <Calendar className="w-5 h-5" />
