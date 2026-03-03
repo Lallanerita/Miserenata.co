@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import { Music, Phone, MapPin, Clock, Star, ChevronDown, Menu, X, Calendar, Users, Heart, CheckCircle, ArrowRight, Gift } from 'lucide-react'
+import { Music, Phone, MapPin, Clock, Star, ChevronDown, Menu, X, Calendar, Users, Heart, CheckCircle, ArrowRight, Gift, MessageCircle } from 'lucide-react'
 
 const cities = ['Duitama', 'Paipa', 'Sogamoso']
 
@@ -130,7 +130,7 @@ function App() {
       `🏠 *Dirección:* ${address}%0A` +
       `💬 *Mensaje:* ${message || 'Sin mensaje adicional'}`
 
-    window.open(`https://wa.me/573001234567?text=${whatsappMessage}`, '_blank')
+    window.open(`https://wa.link/wrc5mf?text=${whatsappMessage}`, '_blank')
     setBookingSubmitted(true)
     setTimeout(() => setBookingSubmitted(false), 5000)
   }
@@ -241,12 +241,12 @@ function App() {
               Reservar Serenata
             </button>
             <a
-              href="https://wa.me/573001234567"
+              href="https://wa.link/wrc5mf"
               target="_blank"
               rel="noopener noreferrer"
               className="border-2 border-amber-500/50 text-amber-400 px-8 sm:px-10 py-4 rounded-full font-bold text-lg hover:bg-amber-500/10 transition-all flex items-center gap-2 w-full sm:w-auto justify-center"
             >
-              <Phone className="w-5 h-5" />
+              <MessageCircle className="w-5 h-5" />
               WhatsApp
             </a>
           </div>
@@ -451,7 +451,7 @@ function App() {
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="300 123 4567"
+                    placeholder="320 411 2721"
                     className="w-full bg-stone-800/80 border border-stone-700 rounded-xl px-4 py-3 text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all"
                   />
                 </div>
@@ -693,7 +693,7 @@ function App() {
             <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6 hover:border-amber-900/40 transition-all">
               <Phone className="w-8 h-8 text-amber-400 mx-auto mb-3" />
               <h4 className="font-bold text-white mb-1">Teléfono</h4>
-              <p className="text-stone-400 text-sm">300 123 4567</p>
+              <p className="text-stone-400 text-sm">320 411 2721</p>
             </div>
             <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6 hover:border-amber-900/40 transition-all">
               <Clock className="w-8 h-8 text-amber-400 mx-auto mb-3" />
@@ -709,12 +709,12 @@ function App() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="https://wa.me/573001234567"
+              href="https://wa.link/wrc5mf"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg shadow-green-500/20 flex items-center justify-center gap-2"
             >
-              <Phone className="w-5 h-5" />
+              <MessageCircle className="w-5 h-5" />
               Escríbenos por WhatsApp
             </a>
             <button
@@ -740,7 +740,7 @@ function App() {
             </div>
             <div className="flex items-center gap-6 text-stone-500 text-sm">
               <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Duitama, Paipa, Sogamoso</span>
-              <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> 300 123 4567</span>
+              <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> 320 411 2721</span>
             </div>
             <p className="text-stone-600 text-sm">
               © 2026 Miserenata.co. Todos los derechos reservados.
@@ -751,13 +751,13 @@ function App() {
 
       {/* Floating WhatsApp Button */}
       <a
-        href="https://wa.me/573001234567"
+        href="https://wa.link/wrc5mf"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-400 text-white w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-2xl shadow-green-500/30 flex items-center justify-center transition-all hover:scale-110"
         title="Chat por WhatsApp"
       >
-        <Phone className="w-7 h-7 sm:w-8 sm:h-8" />
+        <MessageCircle className="w-7 h-7 sm:w-8 sm:h-8" />
       </a>
     </div>
   )
