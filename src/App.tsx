@@ -920,7 +920,7 @@ function App() {
             Contáctanos directamente por WhatsApp o llámanos. Estamos disponibles para ti todos los días de la semana.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto mb-10">
             <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6 hover:border-amber-900/40 transition-all">
               <Phone className="w-8 h-8 text-amber-400 mx-auto mb-3" />
               <h4 className="font-bold text-white mb-1">Teléfono</h4>
@@ -930,11 +930,6 @@ function App() {
               <Clock className="w-8 h-8 text-amber-400 mx-auto mb-3" />
               <h4 className="font-bold text-white mb-1">Horario</h4>
               <p className="text-stone-400 text-sm">Lunes a Domingo<br />2:00 PM - 12:00 AM</p>
-            </div>
-            <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6 hover:border-amber-900/40 transition-all">
-              <MapPin className="w-8 h-8 text-amber-400 mx-auto mb-3" />
-              <h4 className="font-bold text-white mb-1">Cobertura</h4>
-              <p className="text-stone-400 text-sm">Duitama, Paipa<br />y Sogamoso</p>
             </div>
           </div>
 
