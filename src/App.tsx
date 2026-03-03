@@ -522,11 +522,8 @@ function App() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-stone-950/90 backdrop-blur-md border-b border-amber-900/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => scrollToSection('hero')}>
-              <Music className="w-7 h-7 sm:w-8 sm:h-8 text-amber-400" />
-              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-400 to-yellow-200 bg-clip-text text-transparent">
-                Miserenata.co
-              </span>
+            <div className="cursor-pointer" onClick={() => scrollToSection('hero')}>
+              <img src="/images/logo.png" alt="Miserenata.co" className="h-12 sm:h-16 w-auto" />
             </div>
 
             {/* Desktop Navigation */}
@@ -958,11 +955,8 @@ function App() {
       <footer className="bg-stone-900/50 border-t border-stone-800 py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <Music className="w-6 h-6 text-amber-400" />
-              <span className="text-lg font-bold bg-gradient-to-r from-amber-400 to-yellow-200 bg-clip-text text-transparent">
-                Miserenata.co
-              </span>
+            <div>
+              <img src="/images/logo.png" alt="Miserenata.co" className="h-12 w-auto" />
             </div>
             <div className="flex items-center gap-6 text-stone-500 text-sm">
               <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> 320 411 2721</span>
