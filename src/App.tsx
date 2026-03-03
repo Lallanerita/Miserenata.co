@@ -757,7 +757,11 @@ function App() {
         className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-400 text-white w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-2xl shadow-green-500/30 flex items-center justify-center transition-all hover:scale-110"
         title="Chat por WhatsApp"
       >
-        <MessageCircle className="w-7 h-7 sm:w-8 sm:h-8" />
+        <img
+          src="/images/whatsapp-logo.png"
+          alt="WhatsApp"
+          className="w-7 h-7 sm:w-8 sm:h-8"
+        />
       </a>
     </div>
   )
