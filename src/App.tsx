@@ -521,30 +521,31 @@ function App() {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-stone-950/90 backdrop-blur-md border-b border-amber-900/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20">
+          {/* Logo row - centered */}
+          <div className="flex items-center justify-center py-2 sm:py-3 relative">
             <div className="cursor-pointer" onClick={() => scrollToSection('hero')}>
-              <img src="/images/logo.png" alt="Miserenata.co" className="h-12 sm:h-16 w-auto" />
+              <img src="/images/logo.png" alt="Miserenata.co" className="h-16 sm:h-20 md:h-24 w-auto drop-shadow-[0_0_15px_rgba(217,169,56,0.4)]" />
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-8">
-              <button onClick={() => scrollToSection('servicios')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium">Servicios</button>
-              <button onClick={() => scrollToSection('testimonios')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium">Testimonios</button>
-              <button onClick={() => scrollToSection('contacto')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium">Contacto</button>
-              <button
-                onClick={() => scrollToSection('servicios')}
-                className="bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 px-6 py-2.5 rounded-full font-bold hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg shadow-amber-500/20"
-              >
-                Reservar Ahora
-              </button>
-            </div>
-
-            {/* Mobile menu button */}
+            {/* Mobile menu button - absolute right */}
             <button
-              className="md:hidden text-amber-400 p-2"
+              className="md:hidden text-amber-400 p-2 absolute right-0"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+
+          {/* Desktop Navigation - centered below logo */}
+          <div className="hidden md:flex items-center justify-center gap-8 pb-2">
+            <button onClick={() => scrollToSection('servicios')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium">Servicios</button>
+            <button onClick={() => scrollToSection('testimonios')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium">Testimonios</button>
+            <button onClick={() => scrollToSection('contacto')} className="text-stone-300 hover:text-amber-400 transition-colors font-medium">Contacto</button>
+            <button
+              onClick={() => scrollToSection('servicios')}
+              className="bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 px-6 py-2.5 rounded-full font-bold hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg shadow-amber-500/20"
+            >
+              Reservar Ahora
             </button>
           </div>
         </div>
